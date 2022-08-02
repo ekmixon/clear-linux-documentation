@@ -46,10 +46,10 @@ if len(sys.argv) < 2:
 
 scriptPath = sys.argv[0]
 outputPath = sys.argv[1]
-fileNamePath = outputPath + "/" + fileName
-outFilePath = outputPath + "/" +  outFile
+fileNamePath = f"{outputPath}/{fileName}"
+outFilePath = f"{outputPath}/{outFile}"
 
-whitelistFilePath = os.path.dirname(scriptPath) + "/" + whitelistFile
+whitelistFilePath = f"{os.path.dirname(scriptPath)}/{whitelistFile}"
 
 with open (whitelistFilePath) as w:
 	whLines = w.readlines()
@@ -75,25 +75,61 @@ for line in lines:
         link = strings[2][:-1]
         link = link.strip()
         if link in whitelist:
-            whiteListLines.append("<b>" + strings[0] + "</b>\n<blockquote><a href=\"" + link + "\">[whitelist] " + link + "</a></blockquote>\n")
+            whiteListLines.append(
+                f"<b>{strings[0]}"
+                + "</b>\n<blockquote><a href=\""
+                + link
+                + "\">[whitelist] "
+                + link
+                + "</a></blockquote>\n"
+            )
+
             numWhiteListMatches += 1
-            print("[White list match] " + link)
+            print(f"[White list match] {link}")
         elif "Anchor '" in line:
-            anchorLines.append("<b>" + strings[0] + "</b>\n<blockquote><a href=\"" + link + "\">[anchor] " + link + "</a></blockquote>\n")
+            anchorLines.append(
+                f"<b>{strings[0]}"
+                + "</b>\n<blockquote><a href=\""
+                + link
+                + "\">[anchor] "
+                + link
+                + "</a></blockquote>\n"
+            )
+
             numAnchors += 1
-            print("[Anchor not found] " + link)
+            print(f"[Anchor not found] {link}")
         else: 
-            newLines.append("<b>" + strings[0] + "</b>\n<blockquote><a href=\"" + link + "\">[broken] " + link + "</a></blockquote>\n")
+            newLines.append(
+                f"<b>{strings[0]}"
+                + "</b>\n<blockquote><a href=\""
+                + link
+                + "\">[broken] "
+                + link
+                + "</a></blockquote>\n"
+            )
+
             numBrokenLinks += 1
-            print("[broken link] " + link)
+            print(f"[broken link] {link}")
 
-newLines.insert(0,"<h1>" + str(numBrokenLinks + numWhiteListMatches) + " broken links found in Sphinx link check</h1>\n")
-newLines.insert(1,"<h2>" + str(numBrokenLinks) + " unmatched broken links</h2>\n")
-newLines.append("<h2>" + str(numAnchors) + " links did not find anchors</h2>\n")
-for line in anchorLines:
-    newLines.append(line)
+newLines.insert(
+    0,
+    f"<h1>{str(numBrokenLinks + numWhiteListMatches)}"
+    + " broken links found in Sphinx link check</h1>\n",
+)
 
-newLines.append("<h2>" + str(numWhiteListMatches) + " links matched whitelist</h2>\n")
+newLines.insert(
+    1, f"<h2>{str(numBrokenLinks)}" + " unmatched broken links</h2>\n"
+)
+
+newLines.append(
+    f"<h2>{str(numAnchors)}" + " links did not find anchors</h2>\n"
+)
+
+newLines.extend(iter(anchorLines))
+newLines.append(
+    f"<h2>{str(numWhiteListMatches)}" + " links matched whitelist</h2>\n"
+)
+
 for line in whiteListLines:
 	newLines.append(line)
 newLines.append("</body></html>")
@@ -102,10 +138,10 @@ with open (outFilePath, "w") as outF:
     for line in newLines:
         outF.write(line)
 
-print("See ./" + outFilePath + " for a detailed breakdown of broken links.")
+print(f"See ./{outFilePath} for a detailed breakdown of broken links.")
 
 if numBrokenLinks != 0:
-    print (str(numBrokenLinks) + " detected. Exiting with error code 255.")
-    sys.exit(-1) 
+    print(f"{str(numBrokenLinks)} detected. Exiting with error code 255.")
+    sys.exit(-1)
 else:
     print ("No unexpected broken links detected.")

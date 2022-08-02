@@ -56,16 +56,14 @@ def getPages(paths):
         files = listdir(path)
         for file in files:
             if file.endswith(".rst"):
-                regex_found = re.search(manPageRegex,file)
-                if regex_found:
+                if regex_found := re.search(manPageRegex, file):
                     filePath = join(path,file)
                     copyfile(filePath,file)
                     manFiles.append(file)
                     manGroups[path].append(file)
                     addManNamePermutations(file)
             elif file.endswith(".md"):
-                regex_found = re.search(mdManPageRegex,file)
-                if regex_found:
+                if regex_found := re.search(mdManPageRegex, file):
                     filePath = join(path,file)
                     rstFileName = processMDFile(file,filePath)
                     manFiles.append(rstFileName)
@@ -75,20 +73,19 @@ def getPages(paths):
 def processMDFile(fileName,filePath):
     manName = fileName.rstrip('.md')
     manSection = manName.split('.')[-1]
-    manName = manName.rstrip('.' + manSection)
+    manName = manName.rstrip(f'.{manSection}')
     lines = []
     headerInsert = ""
     with open(filePath,'r') as m:
         lines = m.readlines()
         if "SYNOPSIS" in lines[0]:
-                header='='*len(manName)
-                lines.insert(0,"# " + manName + "\n\n:Manual section: "+manSection+"\n\n")
-        index = 0
+            header='='*len(manName)
+            lines.insert(0, f"# {manName}" + "\n\n:Manual section: " + manSection + "\n\n")
         first = True
-        for line in lines:
+        for index, line in enumerate(lines):
             newLine = line.replace("**`","`") #Fix some markdown formatting weirdness that doesn't translate to reST
             newLine = newLine.replace("`**","`")
-            if newLine.startswith("#") and not newLine.startswith("##"): #Fix if all headers are first level
+            if newLine.startswith("#") and not newLine.startswith("##"):
                 if first:
                     first = False
                 else:
@@ -97,7 +94,6 @@ def processMDFile(fileName,filePath):
                 newLine = ""
                 headerInsert = manName + "\n" + '='*len(manName) + "\n\n"
             lines[index] = newLine
-            index += 1
         lines.insert(0,headerInsert)
 
     with open(filePath,'w') as md:
@@ -105,7 +101,7 @@ def processMDFile(fileName,filePath):
         rstFilePath = filePath.replace(".md",".rst")
         rstFileName = fileName.replace(".md",".rst")
 
-    command = "pandoc " +  filePath + " -o " + rstFilePath
+    command = f"pandoc {filePath} -o {rstFilePath}"
     subprocess.run(command, shell=True)
     if isfile(rstFilePath):
         copyfile(rstFilePath,rstFileName)
@@ -113,26 +109,28 @@ def processMDFile(fileName,filePath):
 
 def addManNamePermutations(fileName): #Based on all the syntactical permutations of references to man pages in the documents.
     (manName,subsection) = getNameAndSubsection(fileName)
-    manNames = []
-    manNames.append("``" + manName + "``\\(" + subsection +")") # ``mixer.init``\(1)
-    manNames.append("``" + manName + "``\\ (" + subsection +")") # ``mixer.init``\ (1)
-    manNames.append("**``" + manName + "(" + subsection + ")``**")  # **`mixer.init(1)`**
-    manNames.append("``" + manName + "(" + subsection + ")``") # ``mixer.init(1)``
-    manNames.append("**" + manName + "(" + subsection + ")**") # **mixer.init(1)**
-    manNames.append("`" + manName + "(" + subsection + ")`") # `mixer.init(1)`
+    manNames = [
+        f"``{manName}" + "``\\(" + subsection + ")",
+        f"``{manName}" + "``\\ (" + subsection + ")",
+        f"**``{manName}({subsection})``**",
+        f"``{manName}({subsection})``",
+        f"**{manName}({subsection})**",
+        f"`{manName}({subsection})`",
+    ]
+
     manNamePerms[(manName,subsection)] = manNames
 
 def getNameAndSubsection(manFileName):
     manName = manFileName.rstrip('.rst')
     manSection = manName.split('.')[-1]
-    manName = manName.rstrip('.'+manSection)
+    manName = manName.rstrip(f'.{manSection}')
     return (manName,manSection)
 
 def linkToMan(manName,manSection):
-    return "`" + manName + "(" + manSection + ") <" + manName + "." + manSection + ".html>`__"
+    return f"`{manName}({manSection}) <{manName}.{manSection}.html>`__"
  
 def buildManName(name,section):
-    return name + "(" + section + ")"
+    return f"{name}({section})"
 
 def updateManPages():
     #makeSeeAlsoReplacements()
@@ -182,12 +180,12 @@ def createManpagesRST():
         for path, fileList in manGroups.items():
             repoName = path.split("/")[0]
             repoLink = gitHubGroup + repoName
-            repoReST = "`" + repoName + " <" + repoLink + ">`__"
+            repoReST = f"`{repoName} <{repoLink}>`__"
             manGrouping += repoReST + "\n"
             manGrouping += "="*len(repoReST) + "\n\n"
             manGrouping += manTOC
             for file in fileList:
-                manGrouping += "   manpages/" + file + "\n"
+                manGrouping += f"   manpages/{file}" + "\n"
             manGrouping += "\n"
         f.write(manGrouping)
 

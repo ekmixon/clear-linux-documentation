@@ -14,19 +14,17 @@ def code_blocks(filename):
         c_indent = ''
         in_section = []
         for line in fd:
-            blockFound = False
             indent = line[:len(line) - len(line.lstrip())]
-            for blockType in blockTypes:
-                if 'code-block:: ' + blockType in line:
-                    blockFound = True
-            if blockFound:
+            if blockFound := any(
+                f'code-block:: {blockType}' in line for blockType in blockTypes
+            ):
                 in_section = [line.strip()]
                 c_indent = ''
                 blockFound = False
             elif in_section:
                 if not c_indent and line.strip():
                     c_indent = indent
-                if not (len(indent) >= len(c_indent)) and line.strip():
+                if len(indent) < len(c_indent) and line.strip():
                     yield in_section[2:]
                     in_section = []
                 else:
